@@ -1,0 +1,77 @@
+# Example TV dashboard. In Home Assistant: Settings > Dashboards > Add dashboard > "New dashboard
+# from scratch" (name it e.g. "TV"), open it, top-right pencil > three dots > Raw configuration editor,
+# paste this, then change the entity IDs to yours. Anything you don't have can be deleted.
+views:
+  - title: TV
+    path: tv
+    icon: mdi:television
+    type: panel
+    cards:
+      - type: custom:tv-home-card
+        greeting_name: ""                 # e.g. "Sam" -> "Good evening, Sam"
+        weather: weather.forecast_home
+        idle_back_seconds: 120            # go back to the cameras after 2 min without a key press
+        alert_seconds: 30                 # how long the in-dashboard person pop-up stays
+        # Optional chips on the left (delete the lines you don't have; see the README):
+        # bins: sensor.bin_collection
+        # server: sensor.server_stats
+        # adguard_queries: sensor.adguard_home_dns_queries
+        # adguard_blocked: sensor.adguard_home_dns_queries_blocked
+        # adguard_pause_script: script.adguard_pause
+        cameras:                          # up to 3
+          - entity: camera.front_door
+            name: Front door
+            person: binary_sensor.front_door_person   # red ring + "Person" badge while on
+            alert: true                               # also pop up this camera when a person is seen
+            actions:                                  # buttons under the full-screen view (press Down)
+              - entity: light.porch
+                name: Porch light
+                icon: mdi:outdoor-lamp
+          - entity: camera.driveway
+            name: Driveway
+            person: binary_sensor.driveway_person
+            alert: false
+            actions:
+              - entity: cover.garage_door
+                name: Garage door
+                icon: mdi:garage
+                confirm: Move the garage door?
+          - entity: camera.backyard
+            name: Backyard
+        rooms:
+          - name: Living room
+            icon: mdi:sofa-outline
+            color: green
+            devices:
+              - entity: light.living_room_lamp
+                name: Lamp
+              - entity: climate.heater
+                name: Heater
+              - entity: media_player.living_room_tv
+                name: TV
+          - name: Kitchen
+            icon: mdi:silverware-fork-knife
+            color: orange
+            devices:
+              - entity: light.kitchen
+                name: Ceiling
+          - name: Bedroom
+            icon: mdi:bed-king
+            color: pink
+            devices:
+              - entity: light.bedroom_lamp
+                name: Lamp
+                icon: mdi:lamp
+              - entity: fan.bedroom
+                name: Fan
+          - name: Outside
+            icon: mdi:tree
+            color: lgreen
+            devices:
+              - entity: light.porch
+                name: Porch
+                icon: mdi:outdoor-lamp
+              - entity: cover.garage_door
+                name: Garage door
+                icon: mdi:garage
+                confirm: Move the garage door?

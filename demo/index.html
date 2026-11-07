@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Offline demo: renders the card with fake Home Assistant data. Open demo/index.html in a browser. -->
+<html><head><meta charset="utf-8"><title>TV Home demo</title>
+<style>html,body{margin:0;height:100%;background:#111}tv-home-card{height:100vh!important}</style>
+<script>
+  // stand-in for HA's <ha-icon>: a small round dot
+  customElements.define("ha-icon", class extends HTMLElement {
+    connectedCallback(){ this.style.cssText="display:inline-block;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);border-radius:50%;background:currentColor;opacity:.85;flex:none"; }
+  });
+  const cam = (label, a, b) => "data:image/svg+xml," + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="1280" height="720" fill="url(#g)"/><text x="640" y="380" font-family="sans-serif" font-size="56" fill="#fff" fill-opacity=".55" text-anchor="middle">${label} (demo)</text></svg>`);
+</script>
+<script type="module" src="../dist/tv-home-card.js"></script>
+</head><body>
+<script type="module">
+await customElements.whenDefined("tv-home-card");
+const S = (id, state, attributes = {}) => [id, { entity_id: id, state, attributes }];
+const states = Object.fromEntries([
+  S("weather.forecast_home", "partlycloudy", { temperature: 18, humidity: 64, wind_speed: 12, wind_speed_unit: "km/h", temperature_unit: "°C" }),
+  S("camera.front_door", "idle", { entity_picture: cam("Front door", "#37474f", "#263238") }),
+  S("camera.driveway", "idle", { entity_picture: cam("Driveway", "#3e4a3d", "#1f2a1e") }),
+  S("camera.backyard", "idle", { entity_picture: cam("Backyard", "#4a3f35", "#2a211a") }),
+  S("binary_sensor.front_door_person", "on"),
+  S("binary_sensor.driveway_person", "off"),
+  S("light.porch", "on", { brightness: 200 }),
+  S("light.living_room", "on", { brightness: 140, rgb_color: [255, 170, 90] }),
+  S("light.kitchen", "off"), S("light.bedroom_lamp", "off"),
+  S("cover.garage_door", "closed"),
+  S("climate.heater", "heat", { current_temperature: 19, temperature: 21 }),
+  S("media_player.living_room_tv", "playing", { app_name: "YouTube" }),
+  S("fan.bedroom", "off"),
+]);
+const days = ["sunny", "rainy", "cloudy", "partlycloudy", "sunny"];
+const hass = { states, hassUrl: (p) => p, callService: async () => {},
+  connection: { sendMessagePromise: async () => ({ response: { "weather.forecast_home": { forecast: days.map((c, i) => ({
+    datetime: new Date(Date.now() + (i + 1) * 864e5).toISOString(), condition: c, temperature: 17 + i, templow: 9 + i, precipitation_probability: c === "rainy" ? 80 : 10 })) } } }) } };
+const card = document.createElement("tv-home-card");
+card.setConfig({
+  weather: "weather.forecast_home", greeting_name: "",
+  cameras: [
+    { entity: "camera.front_door", name: "Front door", person: "binary_sensor.front_door_person", alert: false,
+      actions: [{ entity: "light.porch", name: "Porch light", icon: "mdi:outdoor-lamp" }] },
+    { entity: "camera.driveway", name: "Driveway", person: "binary_sensor.driveway_person" },
+    { entity: "camera.backyard", name: "Backyard" },
+  ],
+  rooms: [
+    { name: "Living room", icon: "mdi:sofa-outline", color: "green", devices: [
+      { entity: "light.living_room", name: "Lamp" }, { entity: "climate.heater", name: "Heater" },
+      { entity: "media_player.living_room_tv", name: "TV" }] },
+    { name: "Kitchen", icon: "mdi:silverware-fork-knife", color: "orange", devices: [{ entity: "light.kitchen", name: "Ceiling" }] },
+    { name: "Bedroom", icon: "mdi:bed-king", color: "pink", devices: [{ entity: "light.bedroom_lamp", name: "Lamp" }, { entity: "fan.bedroom", name: "Fan" }] },
+    { name: "Outside", icon: "mdi:tree", color: "lgreen", devices: [
+      { entity: "light.porch", name: "Porch" }, { entity: "cover.garage_door", name: "Garage door", confirm: "Move the garage door?" }] },
+  ],
+});
+document.body.appendChild(card);
+card.hass = hass;
+const mode = new URLSearchParams(location.search).get("mode");
+if (mode) setTimeout(() => card._setMode(mode), 50);
+</script></body></html>
